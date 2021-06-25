@@ -9,6 +9,9 @@ $User_Profile = "C:\Users\$Get_User"
 ### Destination Path ###
 $Destination = "\\nasprod\helpdesk\userBups\$Get_User"
 
+### Robocopy Staging Log Path ###
+$RoboStagingLog = "\\nasprod\helpdesk\userBups\bupLogs\staging"
+
 ##### Browsing Bookmark Paths #####
 
 ### Chrome Bookmarks ###
@@ -73,7 +76,7 @@ function Copy-WithProgress {
 
     #region Robocopy Staging
     Write-Verbose -Message 'Analyzing robocopy job ...';
-    $StagingLogPath = '{0}C:\Users\gtrask\Desktop\{1} robocopy staging.log' -f $env:windir, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
+    $StagingLogPath = '{0}\{1}\{2}' -f $RoboStagingLog, $Get_User, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
 
     $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $User_Profile, $Destination, $StagingLogPath, $CommonRobocopyParams;
     Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList);
@@ -89,7 +92,7 @@ function Copy-WithProgress {
 
     #region Start Robocopy
     # Begin the robocopy process
-    $RobocopyLogPath = '{0}C:\Users\gtrask\Desktop\{1} robocopy.log' -f $env:windir, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
+    $RobocopyLogPath = '{0}\temp\{1} robocopy.log' -f $env:windir, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
     $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams;
     Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList);
     $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow;
