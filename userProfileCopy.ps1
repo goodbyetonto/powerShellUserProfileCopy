@@ -12,6 +12,9 @@ $Destination = "\\nasprod\helpdesk\userBups\$Get_User"
 ### Robocopy Staging Log Path ###
 $RoboStagingLog = "\\nasprod\helpdesk\userBups\bupLogs\staging"
 
+### Robocopy Final Log Path ###
+$RoboFinalLog = "\\nasprod\helpdesk\userBups\bupLogs\final"
+
 ##### Browsing Bookmark Paths #####
 
 ### Chrome Bookmarks ###
@@ -92,7 +95,7 @@ function Copy-WithProgress {
 
     #region Start Robocopy
     # Begin the robocopy process
-    $RobocopyLogPath = '{0}\temp\{1} robocopy.log' -f $env:windir, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
+    $RobocopyLogPath = '{0}\{1}\{2}' -f $RoboFinalLog, $Get_User, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
     $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams;
     Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList);
     $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow;
