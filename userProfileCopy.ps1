@@ -93,6 +93,10 @@ function Copy-WithProgress {
     Write-Verbose -Message ('Total bytes to be copied: {0}' -f $BytesTotal);
     #endregion Robocopy Staging
 
+    # Pause to let log files complete
+    Write-Verbose -Message ("Creating staging log at $StagingLogPath"); 
+    Start-Sleep 5; 
+
     #region Start Robocopy
     # Begin the robocopy process
     $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
@@ -101,6 +105,10 @@ function Copy-WithProgress {
     $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow;
     Start-Sleep -Milliseconds 100;
     #endregion Start Robocopy
+
+    # Pause to let log files complete
+    Write-Verbose -Message ("Creating final log at $RobocopyLogPath"); 
+    Start-Sleep 5; 
 
     #region Progress bar loop
     while (!$Robocopy.HasExited) {
