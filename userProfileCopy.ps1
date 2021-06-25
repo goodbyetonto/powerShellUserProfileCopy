@@ -79,7 +79,7 @@ function Copy-WithProgress {
 
     #region Robocopy Staging
     Write-Verbose -Message 'Analyzing robocopy job ...';
-    $StagingLogPath = '{0}\{1}\{2}' -f $RoboStagingLog, $Get_User, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
+    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
 
     $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $User_Profile, $Destination, $StagingLogPath, $CommonRobocopyParams;
     Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList);
@@ -95,8 +95,8 @@ function Copy-WithProgress {
 
     #region Start Robocopy
     # Begin the robocopy process
-    $RobocopyLogPath = '{0}\{1}\{2}' -f $RoboFinalLog, $Get_User, (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
-    $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams;
+    $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
+    $ArgumentList = '{0} {1} /LOG:{2} /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams;
     Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList);
     $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow;
     Start-Sleep -Milliseconds 100;
