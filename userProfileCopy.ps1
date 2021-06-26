@@ -35,23 +35,40 @@ $Chrome_Bm = "C:\Users\$Get_User\AppData\Local\Google\Chrome\User Data\Default\B
 ### Firefox Profile ###
 $Firefox_Prof = "C:\Users\$Get_User\AppData\Roaming\Mozilla\Firefox\Profiles"
 
-### Folders to exclude when using 'Robocopy' ###
-$Excludes_Folder =
-    "C:\Users\$Get_User\AppData", 
-    "C:\Users\$Get_User\Application Data",
-    "C:\Users\$Get_User\Cookies",
-    "C:\Users\$Get_User\IntelGraphicsProfiles",
-    "C:\Users\$Get_User\Local Settings",
-    "C:\Users\$Get_User\MicrosoftEdgeBackups", 
-    "C:\Users\$Get_User\NetHood", 
-    "C:\Users\$Get_User\OneDrive", 
-    "C:\Users\$Get_User\Pictures", 
-    "C:\Users\$Get_User\PrintHood", 
-    "C:\Users\$Get_User\Recent",
-    "C:\Users\$Get_User\SendTo",
-    "C:\Users\$Get_User\Start Menu",
-    "C:\Users\$Get_User\Templates"
-      
+### Folders to exclude ###
+$Excludes_Folder = 
+    'AppData',
+    'Application Data', 
+    'Cookies',
+    'IntelGraphicsProfiles',
+    'Local Settings', 
+    'MicrosoftEdgeBackups', 
+    'Nethood', 
+    'OneDrive', 
+    'PrintHood', 
+    'Recent', 
+    'SendTo', 
+    'Start Menu', 
+    'Templates' 
+
+##### Excluded folder pathways for running script over network/locally #####
+
+### Local Folder Paths for Exclusion ###
+$Exclude_Local = @()
+
+Foreach($Folder in $Excludes_Folder)
+{
+    $Exclude_Local += ,"$User_Profile\$folder"
+}
+
+### Network Folder Paths for Exclusion ###
+$Exclude_Net = @()
+
+Foreach($Folder in $Excludes_Folder)
+{
+    $Exclude_Net += ,"$User_Profile_Net\$folder"
+}
+
 ### Files to Exclude when using 'Robocopy' ###
 $Excludes_Files
 
@@ -103,11 +120,7 @@ function Copy-WithProgress {
     Write-Verbose -Message ('Total bytes to be copied: {0}' -f $BytesTotal);
     #endregion Robocopy Staging
 
-    # Pause to let log files complete
-    #Write-Verbose -Message ("Creating staging log at $StagingLogPath"); 
-    #Start-Sleep 5; 
-
-    #region Start Robocopy
+    #Region Start Robocopy
     # Begin the robocopy process
     $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss') + '_final';
     $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams;
@@ -115,10 +128,6 @@ function Copy-WithProgress {
     $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow;
     Start-Sleep -Milliseconds 100;
     #endregion Start Robocopy
-
-    # Pause to let log files complete
-    #Write-Verbose -Message ("Creating final log at $RobocopyLogPath"); 
-    #Start-Sleep 5; 
 
     #region Progress bar loop
     while (!$Robocopy.HasExited) {
