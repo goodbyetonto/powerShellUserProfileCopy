@@ -1,10 +1,22 @@
-### PC REFRESH AUTOMATIONS ###
+### Prompt for input: Network or Local transfer? ###
+$Transfer_Type = Read-Host "Type 'local' if you are executing script from user's computer. Type 'network' if you are executing remotely"
 
-### Retrieve user/profile name ###
-$Get_User = $env:username
-
-### User Profile Path ###
-$User_Profile = "C:\Users\$Get_User"
+#assign source values based on whether migration is being initiated locally or over the network
+if($Transfer_Type -eq 'network')
+{
+    ### Prompt for input of hostname ###
+    $Hostname = Read-Host "Please enter the hostname of the computer"
+    $User_Profile = Read-Host "Please enter the username of they whose data you would like to copy"
+    ### User Profile Path for running over the network ###
+    $User_Profile_Net = "\\$Hostname\c$\Users\$User_Profile"
+} 
+else 
+{
+    ### Retrieve user/profile name ###
+    $Get_User = $env:username
+    ### User Profile Path ###
+    $User_Profile = "C:\Users\$Get_User"
+}
 
 ### Destination Path ###
 $Destination = "\\nasprod\helpdesk\userBups\$Get_User"
@@ -24,11 +36,11 @@ $Chrome_Bm = "C:\Users\$Get_User\AppData\Local\Google\Chrome\User Data\Default\B
 $Firefox_Prof = "C:\Users\$Get_User\AppData\Roaming\Mozilla\Firefox\Profiles"
 
 ### Folders to exclude when using 'Robocopy' ###
-$Excludes_Folder=
+$Excludes_Folder =
     "C:\Users\$Get_User\AppData", 
     "C:\Users\$Get_User\Application Data",
     "C:\Users\$Get_User\Cookies",
-    "C:\Users\$Get_User\IntelGraphicsProfiles"
+    "C:\Users\$Get_User\IntelGraphicsProfiles",
     "C:\Users\$Get_User\Local Settings",
     "C:\Users\$Get_User\MicrosoftEdgeBackups", 
     "C:\Users\$Get_User\NetHood", 
@@ -39,9 +51,7 @@ $Excludes_Folder=
     "C:\Users\$Get_User\SendTo",
     "C:\Users\$Get_User\Start Menu",
     "C:\Users\$Get_User\Templates"
-    
-
-    
+      
 ### Files to Exclude when using 'Robocopy' ###
 $Excludes_Files
 
@@ -70,16 +80,16 @@ function Copy-WithProgress {
     # MT  = Number of threads to utilize for multi-thread data copying
     # NP  = Don't show progress percentage in log
     # NC  = Don't log file classes (existing, new file, etc.)
-    # BYTES = Show file sizes in bytes
+    # BYTES = Show file sizes in bytesY
     # NJH = Do not display robocopy job header (JH)
     # NJS = Do not display robocopy job summary (JS)
     # TEE = Display log in stdout AND in target log file
-    $CommonRobocopyParams = "/MIR /XA:SH /XD $Excludes_Folder /XF:.tmp /XJD /R:5 /W:15 /MT:16 /Z /NP /NDL /NC /BYTES /NJH /NJS";
+    $CommonRobocopyParams = "/MIR /XA:SH /XD $Excludes_Folder /XJD /R:5 /W:15 /MT:12 /Z /NP /NDL /NC /BYTES /NJH /NJS";
     #endregion Robocopy params
 
     #region Robocopy Staging
     Write-Verbose -Message 'Analyzing robocopy job ...';
-    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
+    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss') + '_staging';
 
     $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $User_Profile, $Destination, $StagingLogPath, $CommonRobocopyParams;
     Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList);
@@ -94,21 +104,21 @@ function Copy-WithProgress {
     #endregion Robocopy Staging
 
     # Pause to let log files complete
-    Write-Verbose -Message ("Creating staging log at $StagingLogPath"); 
-    Start-Sleep 5; 
+    #Write-Verbose -Message ("Creating staging log at $StagingLogPath"); 
+    #Start-Sleep 5; 
 
     #region Start Robocopy
     # Begin the robocopy process
-    $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss');
-    $ArgumentList = '{0} {1} /LOG:{2} /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams;
+    $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss') + '_final';
+    $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams;
     Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList);
     $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow;
     Start-Sleep -Milliseconds 100;
     #endregion Start Robocopy
 
     # Pause to let log files complete
-    Write-Verbose -Message ("Creating final log at $RobocopyLogPath"); 
-    Start-Sleep 5; 
+    #Write-Verbose -Message ("Creating final log at $RobocopyLogPath"); 
+    #Start-Sleep 5; 
 
     #region Progress bar loop
     while (!$Robocopy.HasExited) {
@@ -135,21 +145,25 @@ function Copy-WithProgress {
     #endregion Function output
 }
 
-### Call the Copy-WithProgress Function ###
-Copy-WithProgress $User_Profile $Destination -Verbose;
+### Call the Copy-WithProgress Function for either local or network conditions ###
+if($Transfer_Type -eq 'local'){
+    Copy-WithProgress $User_Profile $Destination -Verbose;
+} else {
+    Copy-WithProgress $User_Profile_Net $Destination -Verbose; 
+}
 
 ##### Get Browsing Bookmarks #####
 
 ### Copy Chrome Bookmarks ###
-Get-Item -Path $Chrome_Bm -Force | Copy-Item -Destination $Destination 
+#Get-Item -Path $Chrome_Bm -Force | Copy-Item -Destination $Destination 
 
 ### Copy Firefox Profile(s) ###
-Get-Item -Path $Firefox_Prof -Force | Copy-Item -Destination $Destination -Recurse
+#Get-Item -Path $Firefox_Prof -Force | Copy-Item -Destination $Destination -Recurse
 
 ### Get Printers ###
-Get-Printer | Out-File -FilePath "$Destination\printers"
+#Get-Printer | Out-File -FilePath "$Destination\printers"
 
 ### Get All Apps ###
-Get-AppxPackage -User "csusm\$Get_User" -PackageTypeFilter Main | Select Name | Out-File -FilePath "$Destination\apps"
+#Get-AppxPackage -User "csusm\$Get_User" -PackageTypeFilter Main | Select Name | Out-File -FilePath "$Destination\apps"
 
 
