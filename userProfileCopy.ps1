@@ -29,11 +29,17 @@ $RoboFinalLog = "\\nasprod\helpdesk\userBups\bupLogs\final"
 
 ##### Browsing Bookmark Paths #####
 
-### Chrome Bookmarks ###
-$Chrome_Bm = "C:\Users\$Get_User\AppData\Local\Google\Chrome\User Data\Default\Bookmarks"
+### Chrome Bookmarks Local###
+$Chrome_Bm_Local = "$User_Profile\AppData\Local\Google\Chrome\User Data\Default\Bookmarks"
 
-### Firefox Profile ###
-$Firefox_Prof = "C:\Users\$Get_User\AppData\Roaming\Mozilla\Firefox\Profiles"
+### Chrome Bookmarks Net ###
+$Chrome_Bm_Net = "$User_Profile_Net\AppData\Local\Google\Chrome\User Data\Default\Bookmarks"
+
+### Firefox Profile Local ###
+$Firefox_Prof = "$User_Profile\AppData\Roaming\Mozilla\Firefox\Profiles"
+
+### Firefox Profile Net ###
+$Firefox_Prof_Net = "$User_Profile_Net\AppData\Roaming\Mozilla\Firefox\Profiles"
 
 ### Folders to exclude ###
 $Excludes_Folder = 
@@ -157,22 +163,16 @@ function Copy-WithProgress {
 ### Call the Copy-WithProgress Function for either local or network conditions ###
 if($Transfer_Type -eq 'local'){
     Copy-WithProgress $User_Profile $Destination -Verbose;
+    Get-Item -Path $Chrome_Bm_Local -Force | Copy-Item -Destination $Destination; 
+    Get-Item -Path $Firefox_Prof_Local -Force | Copy-Item -Destination $Destination -Recurse;
+    Get-Printer | Out-File -FilePath "$Destination\printers"; 
+    Get-AppxPackage -User "csusm\$Get_User" -PackageTypeFilter Main | Select Name | Out-File -FilePath "$Destination\apps";
 } else {
     Copy-WithProgress $User_Profile_Net $Destination -Verbose; 
+    Get-Item -Path $Chrome_Bm_Net -Force | Copy-Item -Destination $Destination; 
+    Get-Item -Path $Firefox_Prof_Net -Force | Copy-Item -Destination $Destination -Recurse;
+    Get-Printer -ComputerName $Hostname | Out-File -FilePath "$Destination\printers"; 
 }
 
-##### Get Browsing Bookmarks #####
-
-### Copy Chrome Bookmarks ###
-#Get-Item -Path $Chrome_Bm -Force | Copy-Item -Destination $Destination 
-
-### Copy Firefox Profile(s) ###
-#Get-Item -Path $Firefox_Prof -Force | Copy-Item -Destination $Destination -Recurse
-
-### Get Printers ###
-#Get-Printer | Out-File -FilePath "$Destination\printers"
-
-### Get All Apps ###
-#Get-AppxPackage -User "csusm\$Get_User" -PackageTypeFilter Main | Select Name | Out-File -FilePath "$Destination\apps"
 
 
