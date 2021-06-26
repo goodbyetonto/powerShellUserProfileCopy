@@ -28,7 +28,6 @@ $RoboStagingLog = "\\nasprod\helpdesk\userBups\bupLogs\staging"
 $RoboFinalLog = "\\nasprod\helpdesk\userBups\bupLogs\final"
 
 ##### Browsing Bookmark Paths #####
-
 ### Chrome Bookmarks Local###
 $Chrome_Bm_Local = "$User_Profile\AppData\Local\Google\Chrome\User Data\Default\Bookmarks"
 
@@ -107,44 +106,44 @@ function Copy-WithProgress {
     # NJH = Do not display robocopy job header (JH)
     # NJS = Do not display robocopy job summary (JS)
     # TEE = Display log in stdout AND in target log file
-    $CommonRobocopyParams = "/MIR /XA:SH /XD $Excludes_Folder /XJD /R:5 /W:15 /MT:12 /Z /NP /NDL /NC /BYTES /NJH /NJS";
+    $CommonRobocopyParams = "/MIR /XA:SH /XD $Excludes_Folder /XJD /R:5 /W:15 /MT:16 /Z /NP /NDL /NC /BYTES /NJH /NJS"
     #endregion Robocopy params
 
     #region Robocopy Staging
-    Write-Verbose -Message 'Analyzing robocopy job ...';
-    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss') + '_staging';
+    Write-Verbose -Message 'Analyzing robocopy job ...'
+    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss') + '_staging'
 
-    $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $User_Profile, $Destination, $StagingLogPath, $CommonRobocopyParams;
+    $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $User_Profile, $Destination, $StagingLogPath, $CommonRobocopyParams
     Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList);
-    Start-Process -Wait -FilePath robocopy.exe -ArgumentList $StagingArgumentList -NoNewWindow;
+    Start-Process -Wait -FilePath robocopy.exe -ArgumentList $StagingArgumentList -NoNewWindow
     # Get the total number of files that will be copied
-    $StagingContent = Get-Content -Path $StagingLogPath;
-    $TotalFileCount = $StagingContent.Count - 1;
+    $StagingContent = Get-Content -Path $StagingLogPath
+    $TotalFileCount = $StagingContent.Count - 1
 
     # Get the total number of bytes to be copied
-    [RegEx]::Matches(($StagingContent -join "`n"), $RegexBytes) | % { $BytesTotal = 0; } { $BytesTotal += $_.Value; };
-    Write-Verbose -Message ('Total bytes to be copied: {0}' -f $BytesTotal);
+    [RegEx]::Matches(($StagingContent -join "`n"), $RegexBytes) | % { $BytesTotal = 0; } { $BytesTotal += $_.Value; }
+    Write-Verbose -Message ('Total bytes to be copied: {0}' -f $BytesTotal)
     #endregion Robocopy Staging
 
     #Region Start Robocopy
     # Begin the robocopy process
-    $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss') + '_final';
-    $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams;
-    Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList);
-    $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow;
-    Start-Sleep -Milliseconds 100;
+    $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss') + '_final'
+    $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams
+    Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList)
+    $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow
+    Start-Sleep -Milliseconds 100
     #endregion Start Robocopy
 
     #region Progress bar loop
     while (!$Robocopy.HasExited) {
-        Start-Sleep -Milliseconds $ReportGap;
-        $BytesCopied = 0;
-        $LogContent = Get-Content -Path $RobocopyLogPath;
-        $BytesCopied = [Regex]::Matches($LogContent, $RegexBytes) | ForEach-Object -Process { $BytesCopied += $_.Value; } -End { $BytesCopied; };
-        $CopiedFileCount = $LogContent.Count - 1;
-        Write-Verbose -Message ('Bytes copied: {0}' -f $BytesCopied);
-        Write-Verbose -Message ('Files copied: {0}' -f $LogContent.Count);
-        $Percentage = 0;
+        Start-Sleep -Milliseconds $ReportGap
+        $BytesCopied = 0
+        $LogContent = Get-Content -Path $RobocopyLogPath
+        $BytesCopied = [Regex]::Matches($LogContent, $RegexBytes) | ForEach-Object -Process { $BytesCopied += $_.Value; } -End { $BytesCopied; }
+        $CopiedFileCount = $LogContent.Count - 1
+        Write-Verbose -Message ('Bytes copied: {0}' -f $BytesCopied)
+        Write-Verbose -Message ('Files copied: {0}' -f $LogContent.Count)
+        $Percentage = 0
         if ($BytesCopied -gt 0) {
            $Percentage = (($BytesCopied/$BytesTotal)*100)
         }
@@ -154,24 +153,24 @@ function Copy-WithProgress {
 
     #region Function output
     [PSCustomObject]@{
-        BytesCopied = $BytesCopied;
-        FilesCopied = $CopiedFileCount;
+        BytesCopied = $BytesCopied
+        FilesCopied = $CopiedFileCount
     };
     #endregion Function output
 }
 
 ### Call the Copy-WithProgress Function for either local or network conditions ###
 if($Transfer_Type -eq 'local'){
-    Copy-WithProgress $User_Profile $Destination -Verbose;
-    Get-Item -Path $Chrome_Bm_Local -Force | Copy-Item -Destination $Destination; 
-    Get-Item -Path $Firefox_Prof_Local -Force | Copy-Item -Destination $Destination -Recurse;
-    Get-Printer | Out-File -FilePath "$Destination\printers"; 
-    Get-AppxPackage -User "csusm\$Get_User" -PackageTypeFilter Main | Select Name | Out-File -FilePath "$Destination\apps";
+    Copy-WithProgress $User_Profile $Destination -Verbose
+    Get-Item -Path $Chrome_Bm_Local -Force | Copy-Item -Destination $Destination
+    Get-Item -Path $Firefox_Prof_Local -Force | Copy-Item -Destination $Destination -Recurse
+    Get-Printer | Out-File -FilePath "$Destination\printers" 
+    Get-AppxPackage -User "csusm\$Get_User" -PackageTypeFilter Main | Select-Object Name | Out-File -FilePath "$Destination\apps"
 } else {
-    Copy-WithProgress $User_Profile_Net $Destination -Verbose; 
-    Get-Item -Path $Chrome_Bm_Net -Force | Copy-Item -Destination $Destination; 
-    Get-Item -Path $Firefox_Prof_Net -Force | Copy-Item -Destination $Destination -Recurse;
-    Get-Printer -ComputerName $Hostname | Out-File -FilePath "$Destination\printers"; 
+    Copy-WithProgress $User_Profile_Net $Destination -Verbose
+    Get-Item -Path $Chrome_Bm_Net -Force | Copy-Item -Destination $Destination
+    Get-Item -Path $Firefox_Prof_Net -Force | Copy-Item -Destination $Destination -Recurse
+    Get-Printer -ComputerName $Hostname | Out-File -FilePath "$Destination\printers"
 }
 
 
