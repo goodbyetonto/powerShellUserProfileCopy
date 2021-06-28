@@ -22,10 +22,10 @@ else
 $Destination = "\\nasprod\helpdesk\userBups\$Get_User"
 
 ### Robocopy Staging Log Path ###
-$RoboStagingLog = "\\nasprod\helpdesk\userBups\bupLogs\staging"
+$RoboStagingLog = "\\nasprod\helpdesk\userBups\bupLogs\staging_backup"
 
 ### Robocopy Final Log Path ###
-$RoboFinalLog = "\\nasprod\helpdesk\userBups\bupLogs\final"
+$RoboFinalLog = "\\nasprod\helpdesk\userBups\bupLogs\final_backup"
 
 ##### Browsing Bookmark Paths #####
 ### Chrome Bookmarks Local###
@@ -35,7 +35,7 @@ $Chrome_Bm_Local = "$User_Profile\AppData\Local\Google\Chrome\User Data\Default\
 $Chrome_Bm_Net = "$User_Profile_Net\AppData\Local\Google\Chrome\User Data\Default\Bookmarks"
 
 ### Firefox Profile Local ###
-$Firefox_Prof = "$User_Profile\AppData\Roaming\Mozilla\Firefox\Profiles"
+$Firefox_Prof_Local = "$User_Profile\AppData\Roaming\Mozilla\Firefox\Profiles"
 
 ### Firefox Profile Net ###
 $Firefox_Prof_Net = "$User_Profile_Net\AppData\Roaming\Mozilla\Firefox\Profiles"
@@ -71,7 +71,7 @@ $Exclude_Net = @()
 
 Foreach($Folder in $Excludes_Folder)
 {
-    $Exclude_Net += ,"$User_Profile_Net\$folder"
+    $Exclude_Net += ,"$User_Profile_Net\$Folder"
 }
 
 ### Files to Exclude when using 'Robocopy' ###
@@ -106,7 +106,7 @@ function Copy-WithProgress {
     # NJH = Do not display robocopy job header (JH)
     # NJS = Do not display robocopy job summary (JS)
     # TEE = Display log in stdout AND in target log file
-    $CommonRobocopyParams = "/MIR /XA:SH /XD $Excludes_Folder /XJD /R:5 /W:15 /MT:16 /Z /NP /NDL /NC /BYTES /NJH /NJS"
+    $CommonRobocopyParams = "/MIR /XA:SH /XD $Excludes_Folder /XJD /R:5 /W:15 /MT:12 /Z /NP /NDL /NC /BYTES /NJH /NJS"
     #endregion Robocopy params
 
     #region Robocopy Staging
