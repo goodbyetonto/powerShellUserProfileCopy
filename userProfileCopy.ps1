@@ -40,6 +40,13 @@ $Chrome_Bm = "$User_Profile\AppData\Local\Google\Chrome\User Data\Default\Bookma
 ### Firefox Profile ###
 $Firefox_Prof = "$User_Profile\AppData\Roaming\Mozilla\Firefox\Profiles"
 
+### Browser Process Array ###
+$Browser_Array = 
+    'chrome', 
+    'firefox', 
+    'edge', 
+    'internet explorer'
+
 ### Folders to exclude ###
 $Excludes_Folder = 
     '.dotnet',
@@ -155,6 +162,11 @@ function Copy-WithProgress {
 Start-Transcript -Path ('{0}\{1}\{2}' -f $Transcript, $Get_User, $DateTime) -NoClobber
 ### Call Copy-WithProgress function(Robocopy) ###
 Copy-WithProgress $User_Profile $Destination -Verbose
+### Kill all Browser Processes ###
+foreach ($Browser in $Browser_Array) 
+{
+    Stop-Process -Name $Browser* -f 
+}
 ### Get Chrome Bookmark's file and copy to destination folder ###
 Copy-Item -Path "$Chrome_Bm " -Destination $Destination
 ### Get and copy Firefox Profile to destination folder ###
