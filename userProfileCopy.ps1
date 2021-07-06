@@ -23,13 +23,13 @@ else
     ### Hostname
     $Hostname = hostname
     ### User/profile name ###
-    $Get_User = $env:username
+    $Get_User = Read-Host "Please enter the username of they whose data you would like to copy"
     ### User Profile Path ###
     $User_Profile = "C:\Users\$Get_User"
 }
 
 ### Destination Path ###
-$Destination = "\\nasprod\helpdesk\userBups\$Get_User"
+$Destination = "\\nasprod\helpdesk\userBups\$Hostname\$Get_User"
 
 ### Time-Stamp ###
 $DateTime = Get-Date -Format 'yyyy-MM-dd HH-mm-ss'
@@ -39,13 +39,6 @@ $Chrome_Bm = "$User_Profile\AppData\Local\Google\Chrome\User Data\Default\Bookma
 
 ### Firefox Profile ###
 $Firefox_Prof = "$User_Profile\AppData\Roaming\Mozilla\Firefox\Profiles"
-
-### Browser Process Array ###
-$Browser_Array = 
-    'chrome', 
-    'firefox', 
-    'edge', 
-    'internet explorer'
 
 ### Folders to exclude ###
 $Excludes_Folder = 
@@ -115,7 +108,7 @@ function Copy-WithProgress {
 
     ### Region Robocopy Staging ###
     Write-Verbose -Message 'Analyzing robocopy job ...'
-    $StagingLogPath = '{0}\{1}\{2}' -f $RoboStagingLog, $Get_User, $DateTime 
+    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Hostname + "_$Get_User" +"_$DateTime" 
 
     $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $User_Profile, $Destination, $StagingLogPath, $CommonRobocopyParams
     Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList)
@@ -129,7 +122,7 @@ function Copy-WithProgress {
     Write-Verbose -Message ('Total bytes to be copied: {0}' -f $BytesTotal)
 
     ### Region Start Robocopy ###
-    $RobocopyLogPath = '{0}\{1}\{2}' -f $RoboFinalLog, $Get_User, $DateTime
+    $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Hostname + "_$Get_User" + "_$DateTime"
     $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams
     Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList)
     $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow
@@ -159,14 +152,9 @@ function Copy-WithProgress {
 }
 
 ### Start Powershell Transcript Recording ###
-Start-Transcript -Path ('{0}\{1}\{2}' -f $Transcript, $Get_User, $DateTime) -NoClobber
+Start-Transcript -Path ('{0}\{1}\{2}\{3}' -f $Transcript, $Get_User, $Hostname, $DateTime) -NoClobber
 ### Call Copy-WithProgress function(Robocopy) ###
 Copy-WithProgress $User_Profile $Destination -Verbose
-### Kill all Browser Processes ###
-foreach ($Browser in $Browser_Array) 
-{
-    Stop-Process -Name $Browser* -f 
-}
 ### Get Chrome Bookmark's file and copy to destination folder ###
 Copy-Item -Path "$Chrome_Bm " -Destination $Destination
 ### Get and copy Firefox Profile to destination folder ###
@@ -177,6 +165,3 @@ Get-Printer -ComputerName $Hostname | Out-File -FilePath "$Destination\printers"
 Get-AppxPackage -User "csusm\$Get_User" -PackageTypeFilter Main | Select-Object Name | Out-File -FilePath "$Destination\apps"
 ### Stop Powershell Transcript Recording ###
 Stop-Transcript
-
-
-
