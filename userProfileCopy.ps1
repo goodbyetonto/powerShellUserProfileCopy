@@ -115,7 +115,7 @@ function Copy-WithProgress {
 
     ### Region Robocopy Staging ###
     Write-Verbose -Message 'Analyzing robocopy job ...'
-    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Get_User + "$DateTime" + '_staging'
+    $StagingLogPath = '{0}\{1}\{2}' -f $RoboStagingLog, $Get_User, $DateTime 
 
     $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $User_Profile, $Destination, $StagingLogPath, $CommonRobocopyParams
     Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList)
@@ -129,7 +129,7 @@ function Copy-WithProgress {
     Write-Verbose -Message ('Total bytes to be copied: {0}' -f $BytesTotal)
 
     ### Region Start Robocopy ###
-    $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Get_User + "$DateTime" + '_final'
+    $RobocopyLogPath = '{0}\{1}\{2}' -f $RoboFinalLog, $Get_User, $DateTime
     $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams
     Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList)
     $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow
