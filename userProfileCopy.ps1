@@ -5,6 +5,8 @@ $Transfer_Type = Read-Host "Type 'local' if you are executing script from user's
 $RoboStagingLog = "\\nasprod\helpdesk\userBups\bupLogs\staging_backup"
 ### Robocopy Final Log Path ###
 $RoboFinalLog = "\\nasprod\helpdesk\userBups\bupLogs\final_backup"
+### Script Transcript (ie. error handling) ###
+$Transcript = "\\nasprod\helpdesk\userBups\scriptTranscripts"
 
 ### assign variable values for either local/network initiated script ###
 if($Transfer_Type -eq 'network')
@@ -18,7 +20,9 @@ if($Transfer_Type -eq 'network')
 } 
 else 
 {
-    ### Retrieve user/profile name ###
+    ### Hostname
+    $Hostname = hostname
+    ### User/profile name ###
     $Get_User = $env:username
     ### User Profile Path ###
     $User_Profile = "C:\Users\$Get_User"
@@ -27,6 +31,8 @@ else
 ### Destination Path ###
 $Destination = "\\nasprod\helpdesk\userBups\$Get_User"
 
+### Time-Stamp ###
+$DateTime = Get-Date -Format 'yyyy-MM-dd HH-mm-ss'
 
 ### Chrome Bookmarks ###
 $Chrome_Bm = "$User_Profile\AppData\Local\Google\Chrome\User Data\Default\Bookmarks"
@@ -102,7 +108,7 @@ function Copy-WithProgress {
 
     ### Region Robocopy Staging ###
     Write-Verbose -Message 'Analyzing robocopy job ...'
-    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss') + '_staging'
+    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Get_User + "$DateTime" + '_staging'
 
     $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $User_Profile, $Destination, $StagingLogPath, $CommonRobocopyParams
     Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList)
@@ -116,7 +122,7 @@ function Copy-WithProgress {
     Write-Verbose -Message ('Total bytes to be copied: {0}' -f $BytesTotal)
 
     ### Region Start Robocopy ###
-    $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Get_User + '_' + (Get-Date -Format 'yyyy-MM-dd HH-mm-ss') + '_final'
+    $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Get_User + "$DateTime" + '_final'
     $ArgumentList = '"{0}" "{1}" /LOG:"{2}" /ipg:{3} {4}' -f $User_Profile, $Destination, $RobocopyLogPath, $Gap, $CommonRobocopyParams
     Write-Verbose -Message ('Beginning the robocopy process with arguments: {0}' -f $ArgumentList)
     $Robocopy = Start-Process -FilePath robocopy.exe -ArgumentList $ArgumentList -Verbose -PassThru -NoNewWindow
@@ -145,16 +151,20 @@ function Copy-WithProgress {
     };
 }
 
+### Start Powershell Transcript Recording ###
+Start-Transcript -Path ('{0}\{1}\{2}' -f $Transcript, $Get_User, $DateTime) -NoClobber
 ### Call Copy-WithProgress function(Robocopy) ###
 Copy-WithProgress $User_Profile $Destination -Verbose
 ### Get Chrome Bookmark's file and copy to destination folder ###
-Get-Item -Path $Chrome_Bm -Force | Copy-Item -Destination $Destination;
+Copy-Item -Path "$Chrome_Bm " -Destination $Destination
 ### Get and copy Firefox Profile to destination folder ###
-Get-Item -Path $Firefox_Prof -Force | Copy-Item -Destination $Destination -Recurse;
+Copy-Item -Path "$Firefox_Prof" -Destination $Destination -Recurse;
 ### Get Printers and create and save to destination folder ###
 Get-Printer -ComputerName $Hostname | Out-File -FilePath "$Destination\printers";
 ### Get list of installed apps and save to destination folder ###
 Get-AppxPackage -User "csusm\$Get_User" -PackageTypeFilter Main | Select-Object Name | Out-File -FilePath "$Destination\apps"
+### Stop Powershell Transcript Recording ###
+Stop-Transcript
 
 
 
