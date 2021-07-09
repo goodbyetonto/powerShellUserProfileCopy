@@ -168,16 +168,21 @@ foreach($Source in $Source_Paths)
     } 
 }
 
+### Open Chrome (If user hasn't opened Chrome, there will be no Destination folder) ###
+Start-Process -FilePath "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+Start-Sleep -Milliseconds 3000 
 ### Copy Chrome Bookmarks to destination ###
 Copy-Item $Chrome_Bm $Chrome_Bm_Dest
+### Open Firefox ### 
+Start-Process -FilePath "C:\Program Files (x86)\Mozilla Firefox\firefox.exe"
 ### Copy Firefox Profile folder to destination ###
 Copy-Item $Firefox_Prof $Firefox_Prof_Dest -Verbose
 ### Loop through network printer array and add each to user profile ###
 for($i=3; $i -eq $Printers.Length; $i++)
 {
-    Add-Printer -ConnectionName $Printers[$i]
-    Write-Verbose -Message "Adding Network Printer: " + $Printers[$i]
-    Start-Sleep -Milliseconds 5000
+    ### Add network printer & wait to continue to next printer ###
+    Add-Printer -ConnectionName $Printers[$i] | Out-Null
+    Write-Verbose -Message ('Adding Network Printer: {0} ' -f $Printers[$i]) -Verbose
 }
 ### Stop Powershell Transcript Recording ###
 Stop-Transcript
