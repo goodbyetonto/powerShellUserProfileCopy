@@ -1,20 +1,16 @@
 ### Prompt for input: Network or Local transfer? ###
-$Transfer_Type = Read-Host "Type 'local' if you are executing script from user's computer. Type 'network' if you are executing remotely"
-
-### Robocopy Staging Log Path ###
-$RoboStagingLog = "\\nasprod\helpdesk\userBups\bupLogs\staging_backup"
-### Robocopy Final Log Path ###
-$RoboFinalLog = "\\nasprod\helpdesk\userBups\bupLogs\final_backup"
-### Script Transcript (ie. error handling) ###
-$Transcript = "\\nasprod\helpdesk\userBups\scriptTranscripts"
+$Transfer_Type = Read-Host "TYPE 'LOCAL' IF YOU ARE EXECUTING SCRIPT FROM USER'S COMPUTER. TYPE 'NETWORK' IF YOU ARE EXECUTING SCRIPT REMOTELY"
+Write-Host "`n"
 
 ### assign variable values for either local/network initiated script ###
 if($Transfer_Type -eq 'network')
 {
     ### Prompt for input of hostname ###
-    $Hostname = Read-Host "Please enter the hostname of the computer"
+    $Hostname = Read-Host "ENTER THE HOSTNAME OF THE COMPUTER PROFILE WILL BE COPIED FROM"
+    Write-Host "`n"
     ### Retrieve user/profile name ###
-    $Get_User = Read-Host "Please enter the username of they whose data you would like to copy"
+    $Get_User = Read-Host "ENTER THE USERNAME OF THE PROFILE YOU WOULD LIKE TO COPY"
+    Write-Host "`n"
     ### User Profile Path for running over the network ###
     $User_Profile = "\\$Hostname\c$\Users\$Get_User"
 } 
@@ -23,7 +19,8 @@ else
     ### Hostname
     $Hostname = hostname
     ### User/profile name ###
-    $Get_User = Read-Host "Please enter the username of they whose data you would like to copy"
+    $Get_User = Read-Host "ENTER THE USERNAME OF THE PROFILE YOU WOULD LIKE TO COPY"
+    Write-Host "`n"
     ### User Profile Path ###
     $User_Profile = "C:\Users\$Get_User"
 }
@@ -41,7 +38,7 @@ $Chrome_Bm = "$User_Profile\AppData\Local\Google\Chrome\User Data\Default\Bookma
 $Firefox_Prof = "$User_Profile\AppData\Roaming\Mozilla\Firefox\Profiles"
 
 ### Network Printer Array ###
-$PrintArray = @(Get-WMIObject Win32_Printer -ComputerName $Hostname | Where-Object{$_.Name -like "*\\*"} | Select-Object name)
+$PrintArray = @(Get-WMIObject Win32_Printer -ComputerName $Hostname | Where-Object{$_.Name -like "*\\*"} | Select-Object -ExpandProperty name)
 
 ### Folders to exclude ###
 $Excludes_Folder = 
@@ -75,6 +72,13 @@ Foreach($Folder in $Excludes_Folder)
 ### Files to Exclude when using 'Robocopy' ###
 $Excludes_Files
 
+### Robocopy Staging Log Path ###
+$RoboStagingLog = "\\nasprod\helpdesk\userBups\bupLogs\staging_backup"
+### Robocopy Final Log Path ###
+$RoboFinalLog = "\\nasprod\helpdesk\userBups\bupLogs\final_backup"
+### Script Transcript (ie. error handling) ###
+$Transcript = "\\nasprod\helpdesk\userBups\scriptTranscripts"
+
 ##### ROBOCOPY W/STATUS BAR #####
 function Copy-WithProgress {
     [CmdletBinding()]
@@ -91,7 +95,8 @@ function Copy-WithProgress {
 
     ### Region Robocopy params ###
 
-    # MIR = Mirrors soruce directory tree
+    # MIR = Mirrors source directory tree
+    # b   = Backup mode, overrides folder/file permissions
     # copyall = Copies all file information (equivalent to /copy:DATSOU)
     # compress = Requests network compression during file transfer, if applicable
     # XA:SH = Excludes Hidden System Files 
@@ -113,10 +118,12 @@ function Copy-WithProgress {
 
     ### Region Robocopy Staging ###
     Write-Verbose -Message 'Analyzing robocopy job ...'
+    Write-Host "`n"
     $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Hostname + "_$Get_User" +"_$DateTime" 
 
     $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $User_Profile, $Destination, $StagingLogPath, $CommonRobocopyParams
     Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList)
+    Write-Host "`n"
     Start-Process -Wait -FilePath robocopy.exe -ArgumentList $StagingArgumentList -NoNewWindow
     ### Get the total number of files that will be copied ###
     $StagingContent = Get-Content -Path $StagingLogPath
@@ -125,6 +132,7 @@ function Copy-WithProgress {
     ### Get the total number of bytes to be copied ###
     [RegEx]::Matches(($StagingContent -join "`n"), $RegexBytes) | ForEach-Object { $BytesTotal = 0; } { $BytesTotal += $_.Value; };
     Write-Verbose -Message ('Total bytes to be copied: {0}' -f $BytesTotal)
+    Write-Host "`n"
 
     ### Region Start Robocopy ###
     $RobocopyLogPath = '{0}\{1}' -f $RoboFinalLog, $Hostname + "_$Get_User" + "_$DateTime"
