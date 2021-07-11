@@ -1,16 +1,27 @@
 ### Prompt for input: Network or Local transfer? ###
-$Transfer_Type = Read-Host "TYPE 'LOCAL' IF YOU ARE EXECUTING SCRIPT FROM USER'S COMPUTER. TYPE 'NETWORK' IF YOU ARE EXECUTING SCRIPT REMOTELY"
-Write-Host "`n"
+do {
+    $Transfer_Type = Read-Host "TYPE 'local' IF YOU ARE EXECUTING SCRIPT FROM USER'S COMPUTER. TYPE 'network' IF YOU ARE EXECUTING SCRIPT REMOTELY"
+    Write-Host "`n"
+
+} until (($Transfer_Type -match 'local' -or ($Transfer_Type -match 'network')))
+
 
 ### assign variable values for either local/network initiated script ###
 if($Transfer_Type -eq 'network')
 {
     ### Prompt for input of hostname ###
-    $Hostname = Read-Host "ENTER THE HOSTNAME OF THE COMPUTER PROFILE WILL BE COPIED FROM"
-    Write-Host "`n"
+    do {
+        $Hostname = Read-Host "ENTER THE HOSTNAME OF THE COMPUTER PROFILE WILL BE COPIED FROM"
+        Write-Host "`n"
+        $Confirm = Read-Host "CONFIRM HOSTNAME"    
+        
+    } until ($Hostname -eq $Confirm)
     ### Retrieve user/profile name ###
-    $Get_User = Read-Host "ENTER THE USERNAME OF THE PROFILE YOU WOULD LIKE TO COPY"
-    Write-Host "`n"
+    do {
+        $Get_User = Read-Host "ENTER THE USERNAME OF THE PROFILE YOU WOULD LIKE TO COPY"
+        Write-Host "`n"
+        $Confirm = Read-Host "CONFIRM USERNAME"
+    } until ($Get_User -eq $Confirm)
     ### User Profile Path for running over the network ###
     $User_Profile = "\\$Hostname\c$\Users\$Get_User"
 } 
@@ -19,7 +30,11 @@ else
     ### Hostname
     $Hostname = hostname
     ### User/profile name ###
-    $Get_User = Read-Host "ENTER THE USERNAME OF THE PROFILE YOU WOULD LIKE TO COPY"
+    do {
+        $Get_User = Read-Host "ENTER THE USERNAME OF THE PROFILE YOU WOULD LIKE TO COPY"
+        Write-Host "`n"
+        $Confirm = Read-Host "CONFIRM USERNAME"
+    } until ($Get_User -eq $Confirm)
     Write-Host "`n"
     ### User Profile Path ###
     $User_Profile = "C:\Users\$Get_User"
