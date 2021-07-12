@@ -1,41 +1,32 @@
-### Prompt for input: Network or Local transfer? ###
+##### Prompt for user inputs ##### 
+### Network or Local transfer? ###
 do {
     $Transfer_Type = Read-Host "TYPE 'local' IF YOU ARE EXECUTING SCRIPT FROM USER'S COMPUTER. TYPE 'network' IF YOU ARE EXECUTING SCRIPT REMOTELY"
     Write-Host "`n"
-
 } until (($Transfer_Type -match 'local' -or ($Transfer_Type -match 'network')))
 
+### Prompt for input of hostname ###
+do {
+    $Hostname = Read-Host "ENTER THE HOSTNAME OF THE COMPUTER PROFILE WILL BE COPIED FROM"
+    Write-Host "`n"
+    $Confirm = Read-Host "CONFIRM HOSTNAME"    
+    Write-Host "`n"    
+} until ($Hostname -eq $Confirm)
 
-### assign variable values for either local/network initiated script ###
-if($Transfer_Type -eq 'network')
-{
-    ### Prompt for input of hostname ###
-    do {
-        $Hostname = Read-Host "ENTER THE HOSTNAME OF THE COMPUTER PROFILE WILL BE COPIED FROM"
-        Write-Host "`n"
-        $Confirm = Read-Host "CONFIRM HOSTNAME"    
-        
-    } until ($Hostname -eq $Confirm)
-    ### Retrieve user/profile name ###
-    do {
-        $Get_User = Read-Host "ENTER THE USERNAME OF THE PROFILE YOU WOULD LIKE TO COPY"
-        Write-Host "`n"
-        $Confirm = Read-Host "CONFIRM USERNAME"
-    } until ($Get_User -eq $Confirm)
+### Retrieve user/profile name ###
+do {
+    $Get_User = Read-Host "ENTER THE USERNAME OF THE PROFILE YOU WOULD LIKE TO COPY"
+    Write-Host "`n"
+    $Confirm = Read-Host "CONFIRM USERNAME"
+    Write-Host "`n"
+} until ($Get_User -eq $Confirm)
+
+### Assign variable values for either local/network initiated script ###
+if ($Transfer_Type -eq 'network') {
     ### User Profile Path for running over the network ###
     $User_Profile = "\\$Hostname\c$\Users\$Get_User"
 } 
-else 
-{
-    ### Hostname
-    $Hostname = hostname
-    ### User/profile name ###
-    do {
-        $Get_User = Read-Host "ENTER THE USERNAME OF THE PROFILE YOU WOULD LIKE TO COPY"
-        Write-Host "`n"
-        $Confirm = Read-Host "CONFIRM USERNAME"
-    } until ($Get_User -eq $Confirm)
-    Write-Host "`n"
+else {
     ### User Profile Path ###
     $User_Profile = "C:\Users\$Get_User"
 }
@@ -50,38 +41,37 @@ $DateTime = Get-Date -Format 'yyyy-MM-dd HH-mm-ss'
 $Chrome_Bm = "$User_Profile\AppData\Local\Google\Chrome\User Data\Default\Bookmarks"
 
 ### Firefox Profile ###
-$Firefox_Prof = "$User_Profile\AppData\Roaming\Mozilla\Firefox\Profiles"
+$Firefox_Prof = "$User_Profile\AppData\Roaming\Mozilla\Firefox\Profiles\*" 
 
 ### Network Printer Array ###
-$PrintArray = @(Get-WMIObject Win32_Printer -ComputerName $Hostname | Where-Object{$_.Name -like "*\\*"} | Select-Object -ExpandProperty name)
+$PrintArray = @(Get-WMIObject Win32_Printer -ComputerName $Hostname | Where-Object { $_.Name -like "*\\*" } | Select-Object -ExpandProperty name)
 
 ### Folders to exclude ###
 $Excludes_Folder = 
-    '.dotnet',
-    '.vscode',
-    'AppData',
-    'Application Data', 
-    'Cookies', 
-    'IntelGraphicsProfiles',
-    'Local Settings', 
-    'MicrosoftEdgeBackups', 
-    'Nethood', 
-    'OneDrive', 
-    'PrintHood', 
-    'Recent', 
-    'SendTo', 
-    'source', 
-    'Start Menu', 
-    'Templates' 
+'.dotnet',
+'.vscode',
+'AppData',
+'Application Data', 
+'Cookies', 
+'IntelGraphicsProfiles',
+'Local Settings', 
+'MicrosoftEdgeBackups', 
+'Nethood', 
+'OneDrive', 
+'PrintHood', 
+'Recent', 
+'SendTo', 
+'source', 
+'Start Menu', 
+'Templates' 
 
 ##### Excluded folder pathways for running script over network/locally #####
 
 ### Folder Paths for Exclusion ###
 $Exclude = @()
 
-Foreach($Folder in $Excludes_Folder)
-{
-    $Exclude += ,"$User_Profile\$Folder"
+Foreach ($Folder in $Excludes_Folder) {
+    $Exclude += , "$User_Profile\$Folder"
 }
 
 ### Files to Exclude when using 'Robocopy' ###
@@ -98,10 +88,10 @@ $Transcript = "\\nasprod\helpdesk\userBups\scriptTranscripts"
 function Copy-WithProgress {
     [CmdletBinding()]
     param (
-            [Parameter(Mandatory = $true)]
-            [string] $User_Profile
+        [Parameter(Mandatory = $true)]
+        [string] $User_Profile
         , [Parameter(Mandatory = $true)]
-            [string] $Destination
+        [string] $Destination
         , [int] $Gap = 0 
         , [int] $ReportGap = 2000
     )
@@ -134,7 +124,7 @@ function Copy-WithProgress {
     ### Region Robocopy Staging ###
     Write-Verbose -Message 'Analyzing robocopy job ...'
     Write-Host "`n"
-    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Hostname + "_$Get_User" +"_$DateTime" 
+    $StagingLogPath = '{0}\{1}' -f $RoboStagingLog, $Hostname + "_$Get_User" + "_$DateTime" 
 
     $StagingArgumentList = '"{0}" "{1}" /LOG:"{2}" /L {3}' -f $User_Profile, $Destination, $StagingLogPath, $CommonRobocopyParams
     Write-Verbose -Message ('Staging arguments: {0}' -f $StagingArgumentList)
@@ -167,7 +157,7 @@ function Copy-WithProgress {
         Write-Verbose -Message ('Files copied: {0}' -f $LogContent.Count)
         $Percentage = 0
         if ($BytesCopied -gt 0) {
-           $Percentage = (($BytesCopied/$BytesTotal)*100)
+            $Percentage = (($BytesCopied / $BytesTotal) * 100)
         }
         Write-Progress -Activity Robocopy -Status ("Copied {0} of {1} files; Copied {2} of {3} bytes" -f $CopiedFileCount, $TotalFileCount, $BytesCopied, $BytesTotal) -PercentComplete $Percentage
     }
@@ -185,8 +175,9 @@ Start-Transcript -Path ('{0}\{1}\{2}\{3}' -f $Transcript, $Get_User, $Hostname, 
 Copy-WithProgress $User_Profile $Destination -Verbose
 ### Get Chrome Bookmark's file and copy to destination folder ###
 Copy-Item -Path $Chrome_Bm  -Destination $Destination
-### Get and copy Firefox Profile to destination folder ###
-Copy-Item -Path "$Firefox_Prof" -Destination $Destination -Recurse;
+### Create Firefox Folder and copy Firefox Profile to destination folder ###
+New-Item -Path "$Destination" -Name "Firefox" -ItemType "directory"
+Copy-Item -Path "$Firefox_Prof" -Destination "$Destination\Firefox" -Recurse;
 ### Get Network Printers and create and save to destination folder ###
 $PrintArray | Out-File -FilePath "$Destination\printers";
 ### Get list of installed apps and save to destination folder ###
