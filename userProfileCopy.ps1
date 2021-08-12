@@ -33,7 +33,7 @@ else {
 }
 
 # Destination Path 
-$Destination = "\\nasprod\helpdesk\userBups\$Hostname\$GetUser"
+$Destination = { SUPPLY YOUR NETWORK FOLDER PATH HERE }
 
 # Time-Stamp 
 $DateTime = Get-Date -Format 'yyyy-MM-dd HH-mm-ss'
@@ -48,7 +48,7 @@ $FirefoxProf = "$UserProfile\AppData\Roaming\Mozilla\Firefox\Profiles\*"
 $PrintArray = @(Get-WMIObject Win32_Printer -ComputerName $Hostname | Where-Object { $_.Name -like "*\\*" } | Select-Object -ExpandProperty name)
 
 # Network Folder Array 
-$NetFolders = @(Get-WMIObject Win32_MappedLogicalDisk -ComputerName $Hostname | Where-Object { $_.ProviderName -notlike "*\\csusmnt\home*" } | Select-Object -ExpandProperty ProviderName)
+$NetFolders = @(Get-WMIObject Win32_MappedLogicalDisk -ComputerName $Hostname | Where-Object { $_.ProviderName -notlike " {PLACE ANY DEFAULT MAPPED FILE SHARES HERE} " } | Select-Object -ExpandProperty ProviderName)
 
 # Folders to exclude 
 $ExcludesFolder = 
@@ -56,13 +56,13 @@ $ExcludesFolder =
 ".vscode",
 "AppData",
 "Application Data", 
-"California State University San Marcos",
+"{PLACE SHAREPOINT FILE LEAF NAME HERE}",
 "Cookies", 
 "IntelGraphicsProfiles",
 "Local Settings", 
 "MicrosoftEdgeBackups", 
 "Nethood", 
-"OneDrive - California State University San Marcos", 
+"{PLACE ONEDRIVE FILE LEAF NAME HERE"}, 
 "SendTo", 
 "source",
 "Start Menu", 
@@ -83,13 +83,13 @@ $Exclude = '"' + ($Exclude -join '" "') + '"'
 $ExcludesFiles
 
 # Robocopy Staging Log Path 
-$RoboStagingLog = "\\nasprod\helpdesk\userBups\bupLogs\staging_backup"
+$RoboStagingLog = "\\{PARENT FOLDER NAME HERE}\userBups\bupLogs\staging_backup"
 # Robocopy Final Log Path 
-$RoboFinalLog = "\\nasprod\helpdesk\userBups\bupLogs\final_backup"
+$RoboFinalLog = "\\{PARENT FOLDER NAME HERE}\userBups\bupLogs\final_backup"
 # Script Transcript (ie. error handling) 
-$Transcript = "\\nasprod\helpdesk\userBups\scriptTranscripts"
+$Transcript = "\\{PARENT FOLDER NAME HERE}\userBups\scriptTranscripts"
 
-# Copy-WithProgress Function 
+# Copy-WithProgress Function by Trevor Sullivan (https://stackoverflow.com/questions/13883404/custom-robocopy-progress-bar-in-powershell) w/some changes of my own
 function Copy-WithProgress {
     [CmdletBinding()]
     param (
@@ -208,7 +208,7 @@ $PrintArray | Out-File -FilePath "$Destination\printers";
 # Get list of installed apps and save to destination folder #
 Write-Verbose -Message "Creating installed application text file to $Destination\apps" -Verbose
 Write-Host "`n" 
-Get-AppxPackage -User "csusm\$GetUser" -PackageTypeFilter Main | Select-Object Name | Out-File -FilePath "$Destination\apps";
+Get-AppxPackage -User "{DOMAIN NAME HERE}\$GetUser" -PackageTypeFilter Main | Select-Object Name | Out-File -FilePath "$Destination\apps";
 
 # Get Network folders and create and save to destination folder #
 Write-Verbose -Message "Creating network folders text file to $Destination\netFolders" -Verbose
